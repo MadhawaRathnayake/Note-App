@@ -4,22 +4,22 @@ pipeline {
     stages {
         stage('Pull Latest Code') {
             steps {
-                git branch: 'main', url: 'https://github.com/your-repo/note-app.git'
+                git branch: 'main', url: 'https://github.com/MadhawaRathnayake/Note-App.git'
             }
         }
 
         stage('Build Docker Images') {
             steps {
-                sh 'docker build -t your-dockerhub-username/note-backend:latest ./backend/NoteApp'
-                sh 'docker build -t your-dockerhub-username/note-frontend:latest ./frontend/note-app'
+                sh 'docker build -t madhawarathnayake/note-backend:latest ./backend/NoteApp'
+                sh 'docker build -t madhawarathnayake/note-frontend:latest ./frontend/note-app'
             }
         }
 
         stage('Push to Docker Hub') {
             steps {
                 withDockerRegistry([credentialsId: 'dockerhub-credentials', url: '']) {
-                    sh 'docker push your-dockerhub-username/note-backend:latest'
-                    sh 'docker push your-dockerhub-username/note-frontend:latest'
+                    sh 'docker push madhawarathnayake/note-backend:latest'
+                    sh 'docker push madhawarathnayake/note-frontend:latest'
                 }
             }
         }
