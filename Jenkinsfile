@@ -2,33 +2,43 @@ pipeline {
     agent any
 
     stages {
-        stage('Pull Latest Code') {
+        stage('Pull Code from GitHub') {
             steps {
                 git branch: 'main', url: 'https://github.com/MadhawaRathnayake/Note-App.git'
             }
         }
 
-        stage('Build Docker Images') {
+        stage('Build Backend') {
             steps {
                 sh 'docker build -t madhawarathnayake/note-backend:latest ./backend/NoteApp'
+            }
+        }
+
+        stage('Push Backend') {
+            steps {
+                sh 'docker push madhawarathnayake/note-backend:latest'
+            }
+        }
+
+        stage('Build Frontend') {
+            steps {
                 sh 'docker build -t madhawarathnayake/note-frontend:latest ./frontend/note-app'
             }
         }
 
-        stage('Push to Docker Hub') {
+        stage('Push Frontend') {
             steps {
-                withDockerRegistry([credentialsId: 'dockerhub-credentials', url: '']) {
-                    sh 'docker push madhawarathnayake/note-backend:latest'
-                    sh 'docker push madhawarathnayake/note-frontend:latest'
-                }
+                sh 'docker push madhawarathnayake/note-frontend:latest'
             }
         }
 
-        stage('Deploy on EC2') {
+        stage('Deploy via Ansible') {
             steps {
-                sshagent(['ec2-ssh-key']) {
-                    sh 'ssh -o StrictHostKeyChecking=no ec2-user@your-ec2-ip "cd /path/to/docker-compose && docker-compose pull && docker-compose up -d --remove-orphans"'
-                }
+                ansiblePlaybook(
+                    inventory: 'inventory.ini',         // ????????????????
+                    playbook: 'ansible-deploy.yml',
+                    credentialsId: 'your-ssh-key-id'    // ????????????????
+                )
             }
         }
     }
