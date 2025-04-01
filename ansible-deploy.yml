@@ -2,18 +2,22 @@
   hosts: ec2
   become: true
   tasks:
+    - name: Stop running containers
+      command: docker-compose down
+      args:
+        chdir: /path/to/docker-compose-directory
+
+    - name: Remove old images
+      command: docker rmi -f madhawarathnayake/note-backend:latest madhawarathnayake/note-frontend:latest
+      ignore_errors: true
+
     - name: Pull latest backend image
       command: docker pull madhawarathnayake/note-backend:latest
 
     - name: Pull latest frontend image
       command: docker pull madhawarathnayake/note-frontend:latest
 
-    - name: Stop running containers
-      command: docker-compose down
-      args:
-        chdir: /path/to/docker-compose-directory
-
     - name: Start new containers
       command: docker-compose up -d
       args:
-        chdir: /path/to/docker-compose-directory #???????????
+        chdir: /path/to/docker-compose-directory
