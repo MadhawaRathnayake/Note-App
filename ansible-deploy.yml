@@ -6,7 +6,7 @@
     - name: Stop running containers
       command: docker-compose down
       args:
-        chdir: /path/to/docker-compose-directory
+        chdir: /
 
     - name: Remove old images
       command: docker rmi -f madhawarathnayake/note-backend:latest madhawarathnayake/note-frontend:latest
