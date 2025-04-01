@@ -94,12 +94,14 @@ pipeline {
         stage('Deploy via Ansible') {
             steps {
                 ansiblePlaybook(
-                    inventory: 'inventory.ini',         // ????????????????
                     playbook: 'ansible-deploy.yml',
-                    credentialsId: 'your-ssh-key-id'    // ????????????????
+                    inventory: 'inventory.ini',
+                    become: true,
+                    becomeUser: 'root'
                 )
             }
         }
+
     }
 
     
