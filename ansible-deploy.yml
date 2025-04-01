@@ -1,6 +1,7 @@
 - name: Deploy Note App
   hosts: ec2
   become: true
+  become_method: sudo
   tasks:
     - name: Stop running containers
       command: docker-compose down
