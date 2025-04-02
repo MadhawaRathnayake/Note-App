@@ -89,7 +89,21 @@ pipeline {
                     }
                 }
             }
-        }   
+        }
+
+        stage('Run Terraform') {   // NEW STAGE ADDED HERE
+            steps {
+                dir('.') {  // Assuming terraform.tf is in the same directory as Jenkinsfile
+                    script {
+                        sh '''
+                        terraform init
+                        terraform plan -out=tfplan
+                        terraform apply -auto-approve tfplan
+                        '''
+                    }
+                }
+            }
+        }
 
         stage('Deploy via Ansible') {
             steps {

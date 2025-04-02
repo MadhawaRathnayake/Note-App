@@ -53,7 +53,7 @@ resource "aws_security_group" "note-app-sg" {
 
 resource "aws_network_interface_sg_attachment" "sg_attachment" {
   security_group_id    = aws_security_group.note-app-sg.id
-  network_interface_id = data.aws_instance.Note-Application.network_interface_id
+  network_interface_id = data.aws_instance.Note-Application.network_interface_ids[0]
 }
 
 output "instance_public_dns" {
