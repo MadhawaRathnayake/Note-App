@@ -3,13 +3,20 @@
   become: true
   become_method: sudo
   tasks:
-    - name: Stop running containers
-      command: docker-compose down
-      args:
-        chdir: /
+    - name: Stop running backend container (if exists)
+      command: docker rm -f note-backend-container
+      ignore_errors: true
 
-    - name: Remove old images
-      command: docker rmi -f madhawarathnayake/note-backend:latest madhawarathnayake/note-frontend:latest
+    - name: Stop running frontend container (if exists)
+      command: docker rm -f note-frontend-container
+      ignore_errors: true
+
+    - name: Remove old backend image
+      command: docker rmi -f madhawarathnayake/note-backend:latest
+      ignore_errors: true
+
+    - name: Remove old frontend image
+      command: docker rmi -f madhawarathnayake/note-frontend:latest
       ignore_errors: true
 
     - name: Pull latest backend image
@@ -18,7 +25,16 @@
     - name: Pull latest frontend image
       command: docker pull madhawarathnayake/note-frontend:latest
 
-    - name: Start new containers
-      command: docker-compose up -d
-      args:
-        chdir: /
+    - name: Start backend container
+      command: >
+        docker run -d --name note-backend-container
+        -p 5050:8080
+        -e SPRING_PROFILES_ACTIVE=docker
+        madhawarathnayake/note-backend:latest
+
+    - name: Start frontend container
+      command: >
+        docker run -d --name note-frontend-container
+        -p 3000:3000
+        --link note-backend-container
+        madhawarathnayake/note-frontend:latest
