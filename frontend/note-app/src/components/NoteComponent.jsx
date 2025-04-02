@@ -34,7 +34,7 @@ const NoteComponent = ({ note, onNoteUpdate, onNoteDelete }) => {
   const handleUpdate = async () => {
     try {
       const response = await fetch(
-        `http://localhost:5050/api/v1/notes/${note.id}`,
+        `http://13.49.60.249:5050/api/v1/notes/${note.id}`,
         {
           method: "PUT",
           headers: {
@@ -68,7 +68,7 @@ const NoteComponent = ({ note, onNoteUpdate, onNoteDelete }) => {
     if (window.confirm("Are you sure you want to delete this note?")) {
       try {
         const response = await fetch(
-          `http://localhost:5050/api/v1/notes/${note.id}`,
+          `http://13.49.60.249:5050/api/v1/notes/${note.id}`,
           {
             method: "DELETE",
             headers: {
