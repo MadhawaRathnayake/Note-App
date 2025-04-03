@@ -92,32 +92,38 @@ pipeline {
         }
 
        stage('Run Terraform') {
-            steps {
-             withCredentials([aws(credentialsId: 'Amazon-Credentials')]) {  // Use stored AWS credentials
-                 dir('.') {  // Assuming terraform.tf is in the same directory as Jenkinsfile
-                     script {
-                            sh '''
-                         terraform init
-                         terraform plan -out=tfplan
-                         terraform apply -auto-approve tfplan
-                         '''
-                     }
-                 }
-             }
-         }
+    steps {
+        withCredentials([aws(credentialsId: 'Amazon-Credentials')]) {
+            dir('.') {
+                script {
+                    sh '''
+                        terraform init
+                        terraform plan -out=tfplan
+                        terraform apply -auto-approve tfplan
+                    '''
+                    def ec2_ip = sh(script: "terraform output -raw public_ip", returnStdout: true).trim()
+                    
+                    // Overwrite inventory.ini with the new instance's IP
+                    writeFile file: 'inventory.ini', text: "[ec2]\n${ec2_ip} ansible_user=ubuntu ansible_ssh_private_key_file=~/.ssh/my-key.pem"
+                }
+            }
         }
+    }
+}
+
 
 
         stage('Deploy via Ansible') {
-            steps {
-                ansiblePlaybook(
-                    playbook: 'ansible-deploy.yml',
-                    inventory: 'inventory.ini',
-                    become: true,
-                    becomeUser: 'root'
-                )
-            }
-        }
+    steps {
+        ansiblePlaybook(
+            playbook: 'ansible-deploy.yml',
+            inventory: 'inventory.ini',
+            become: true,
+            becomeUser: 'root'
+        )
+    }
+}
+
 
     }
 

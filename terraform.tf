@@ -81,6 +81,7 @@ resource "aws_instance" "web_server" {
   }
 }
 
-output "instance_public_dns" {
-  value = aws_instance.web_server.public_dns
+# Output the public IP so Jenkins can use it for Ansible deployment
+output "public_ip" {
+  value = aws_instance.web_server.public_ip
 }
