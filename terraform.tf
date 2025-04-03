@@ -2,37 +2,6 @@ provider "aws" {
   region = "eu-north-1"
 }
 
-# Adding new part
-# Fetch the latest Ubuntu AMI ID dynamically
-data "aws_ami" "ubuntu" {
-  most_recent = true
-  owners      = ["099720109477"]  # Canonical's AWS account ID
-
-  filter {
-    name   = "name"
-    values = ["ubuntu/images/hvm-ssd/ubuntu-22.04-amd64-server-*"]
-  }
-
-  filter {
-    name   = "virtualization-type"
-    values = ["hvm"]
-  }
-}
-
-# Create a new EC2 instance
-resource "aws_instance" "new_note_app_instance" {
-  ami                    = data.aws_ami.ubuntu.id
-  instance_type          = "t3.micro"
-  key_name               = "your-key-pair"   # Replace with your AWS key pair
-  vpc_security_group_ids = [aws_security_group.note-app-sg.id]
-
-  tags = {
-    Name = "NoteAppInstance"
-  }
-}
-
-#End of the new part
-
 data "aws_instance" "Note-Application" {
   instance_id = "i-0e5df4ddbf9a23cb6"
 }
