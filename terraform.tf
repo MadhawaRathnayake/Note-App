@@ -2,41 +2,14 @@ provider "aws" {
   region = "eu-north-1"
 }
 
-# Adding new part
-# Fetch the latest Ubuntu AMI ID dynamically
-data "aws_ami" "ubuntu" {
-  most_recent = true
-  owners      = ["099720109477"]  # Canonical (Ubuntu) AWS Account ID
+# Security Group
+resource "aws_security_group" "note_app_sg" {
+  name        = "launch-wizard-6"
+  description = "Security group for Note App"
 
-  filter {
-    name   = "name"
-    values = ["ubuntu/images/hvm-ssd/ubuntu-20.04-amd64-server-*"]
-  }
-}
+  vpc_id = "vpc-09a69e5ab6c9a6295"
 
-# Create a new EC2 instance
-resource "aws_instance" "new_note_app_instance" {
-  ami                    = data.aws_ami.ubuntu.id
-  instance_type          = "t3.micro"
-  key_name               = "your-key-pair"   # Replace with your AWS key pair
-  vpc_security_group_ids = [aws_security_group.note-app-sg.id]
-
-  tags = {
-    Name = "NoteAppInstance"
-  }
-}
-
-#End of the new part
-
-data "aws_instance" "Note-Application" {
-  instance_id = "i-0e5df4ddbf9a23cb6"
-}
-
-resource "aws_security_group" "note-app-sg" {
-  name        = "note-app-sg"
-  description = "Security group for Note application"
-
-  # SSH access
+  # Allow SSH
   ingress {
     from_port   = 22
     to_port     = 22
@@ -44,26 +17,18 @@ resource "aws_security_group" "note-app-sg" {
     cidr_blocks = ["0.0.0.0/0"]
   }
 
-  # Jenkins access
+  # Allow HTTPS
   ingress {
-    from_port   = 8080
-    to_port     = 8080
+    from_port   = 443
+    to_port     = 443
     protocol    = "tcp"
     cidr_blocks = ["0.0.0.0/0"]
   }
 
-  # Backend API access
+  # Allow HTTP
   ingress {
-    from_port   = 5050
-    to_port     = 5050
-    protocol    = "tcp"
-    cidr_blocks = ["0.0.0.0/0"]
-  }
-
-  # Frontend access
-  ingress {
-    from_port   = 3000
-    to_port     = 3000
+    from_port   = 80
+    to_port     = 80
     protocol    = "tcp"
     cidr_blocks = ["0.0.0.0/0"]
   }
@@ -77,11 +42,41 @@ resource "aws_security_group" "note-app-sg" {
   }
 }
 
-resource "aws_network_interface_sg_attachment" "sg_attachment" {
-  security_group_id    = aws_security_group.note-app-sg.id
-  network_interface_id = data.aws_instance.Note-Application.network_interface_id
+# EC2 Instance
+resource "aws_instance" "web_server" {
+  ami           = "ami-0c1ac8a41498c1a9c"  # Ubuntu AMI
+  instance_type = "t3.micro"
+  key_name      = "Note-App"
+
+  network_interface {
+    device_index         = 0
+    associate_public_ip_address = true
+    security_groups      = [aws_security_group.note_app_sg.id]
+  }
+
+  root_block_device {
+    volume_size           = 8
+    volume_type           = "gp3"
+    delete_on_termination = true
+    iops                  = 3000
+    throughput            = 125
+  }
+
+  credit_specification {
+    cpu_credits = "unlimited"
+  }
+
+  metadata_options {
+    http_endpoint               = "enabled"
+    http_tokens                 = "required"
+    http_put_response_hop_limit = 2
+  }
+
+  tags = {
+    Name = "Web-Server"
+  }
 }
 
 output "instance_public_dns" {
-  value = data.aws_instance.Note-Application.public_dns
+  value = aws_instance.web_server.public_dns
 }
