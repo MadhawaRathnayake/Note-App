@@ -6,8 +6,7 @@ provider "aws" {
 resource "aws_security_group" "note_app_sg" {
   name        = "launch-wizard-6"
   description = "Security group for Note App"
-
-  vpc_id = "vpc-09a69e5ab6c9a6295"
+  vpc_id      = "vpc-09a69e5ab6c9a6295"
 
   # Allow SSH
   ingress {
@@ -42,17 +41,22 @@ resource "aws_security_group" "note_app_sg" {
   }
 }
 
+# Fetch the first subnet from the VPC
+data "aws_subnets" "default" {
+  filter {
+    name   = "vpc-id"
+    values = ["vpc-09a69e5ab6c9a6295"]
+  }
+}
+
 # EC2 Instance
 resource "aws_instance" "web_server" {
-  ami           = "ami-0c1ac8a41498c1a9c"  # Ubuntu AMI
-  instance_type = "t3.micro"
-  key_name      = "Note-App"
-
-  network_interface {
-    device_index         = 0
-    associate_public_ip_address = true
-    security_groups      = [aws_security_group.note_app_sg.id]
-  }
+  ami                    = "ami-0c1ac8a41498c1a9c"  # Ubuntu AMI
+  instance_type          = "t3.micro"
+  key_name               = "Note-App"
+  subnet_id              = data.aws_subnets.default.ids[0] # Use the first available subnet
+  associate_public_ip_address = true
+  vpc_security_group_ids = [aws_security_group.note_app_sg.id]
 
   root_block_device {
     volume_size           = 8
