@@ -2,13 +2,46 @@ provider "aws" {
   region = "eu-north-1"
 }
 
-# Security Group
-resource "aws_security_group" "note_app_sg" {
-  name        = "launch-wizard-6"
-  description = "Security group for Note App"
-  vpc_id      = "vpc-09a69e5ab6c9a6295"
+# Adding new part
+# Fetch the latest Ubuntu AMI ID dynamically
+data "aws_ami" "ubuntu" {
+  most_recent = true
+  owners      = ["099720109477"]  # Canonical's AWS account ID
 
-  # Allow SSH
+  filter {
+    name   = "name"
+    values = ["ubuntu/images/hvm-ssd/ubuntu-22.04-amd64-server-*"]
+  }
+
+  filter {
+    name   = "virtualization-type"
+    values = ["hvm"]
+  }
+}
+
+# Create a new EC2 instance
+resource "aws_instance" "new_note_app_instance" {
+  ami                    = data.aws_ami.ubuntu.id
+  instance_type          = "t3.micro"
+  key_name               = "your-key-pair"   # Replace with your AWS key pair
+  vpc_security_group_ids = [aws_security_group.note-app-sg.id]
+
+  tags = {
+    Name = "NoteAppInstance"
+  }
+}
+
+#End of the new part
+
+data "aws_instance" "Note-Application" {
+  instance_id = "i-0e5df4ddbf9a23cb6"
+}
+
+resource "aws_security_group" "note-app-sg" {
+  name        = "note-app-sg"
+  description = "Security group for Note application"
+
+  # SSH access
   ingress {
     from_port   = 22
     to_port     = 22
@@ -16,18 +49,26 @@ resource "aws_security_group" "note_app_sg" {
     cidr_blocks = ["0.0.0.0/0"]
   }
 
-  # Allow HTTPS
+  # Jenkins access
   ingress {
-    from_port   = 443
-    to_port     = 443
+    from_port   = 8080
+    to_port     = 8080
     protocol    = "tcp"
     cidr_blocks = ["0.0.0.0/0"]
   }
 
-  # Allow HTTP
+  # Backend API access
   ingress {
-    from_port   = 80
-    to_port     = 80
+    from_port   = 5050
+    to_port     = 5050
+    protocol    = "tcp"
+    cidr_blocks = ["0.0.0.0/0"]
+  }
+
+  # Frontend access
+  ingress {
+    from_port   = 3000
+    to_port     = 3000
     protocol    = "tcp"
     cidr_blocks = ["0.0.0.0/0"]
   }
@@ -41,47 +82,11 @@ resource "aws_security_group" "note_app_sg" {
   }
 }
 
-# Fetch the first subnet from the VPC
-data "aws_subnets" "default" {
-  filter {
-    name   = "vpc-id"
-    values = ["vpc-09a69e5ab6c9a6295"]
-  }
+resource "aws_network_interface_sg_attachment" "sg_attachment" {
+  security_group_id    = aws_security_group.note-app-sg.id
+  network_interface_id = data.aws_instance.Note-Application.network_interface_id
 }
 
-# EC2 Instance
-resource "aws_instance" "web_server" {
-  ami                    = "ami-0c1ac8a41498c1a9c"  # Ubuntu AMI
-  instance_type          = "t3.micro"
-  key_name               = "Note-App"
-  subnet_id              = data.aws_subnets.default.ids[0] # Use the first available subnet
-  associate_public_ip_address = true
-  vpc_security_group_ids = [aws_security_group.note_app_sg.id]
-
-  root_block_device {
-    volume_size           = 8
-    volume_type           = "gp3"
-    delete_on_termination = true
-    iops                  = 3000
-    throughput            = 125
-  }
-
-  credit_specification {
-    cpu_credits = "unlimited"
-  }
-
-  metadata_options {
-    http_endpoint               = "enabled"
-    http_tokens                 = "required"
-    http_put_response_hop_limit = 2
-  }
-
-  tags = {
-    Name = "Web-Server"
-  }
-}
-
-# Output the public IP so Jenkins can use it for Ansible deployment
-output "public_ip" {
-  value = aws_instance.web_server.public_ip
+output "instance_public_dns" {
+  value = data.aws_instance.Note-Application.public_dns
 }
